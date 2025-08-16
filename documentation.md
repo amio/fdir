@@ -102,7 +102,7 @@ Use this to also add the directories to the output.
 const crawler = new fdir().withDirs();
 ```
 
-### `withSymlinks(boolean)`
+### `withSymlinks({ resolvePaths: boolean })`
 
 Use this to follow all symlinks recursively.
 
@@ -116,10 +116,10 @@ Use this to follow all symlinks recursively.
 
 ```js
 // to resolve all symlinked paths to their original path
-const crawler = new fdir().withSymlinks(true);
+const crawler = new fdir().withSymlinks({ resolvePaths: true });
 
 // to disable path resolution
-const crawler = new fdir().withSymlinks(false);
+const crawler = new fdir().withSymlinks({ resolvePaths: false });
 ```
 
 ### `withMaxDepth(number)`
@@ -132,6 +132,16 @@ Use this to limit the maximum depth fdir will crawl to before stopping.
 
 ```js
 const crawler = new fdir().withMaxDepth(5);
+```
+
+### `withMaxFiles(number)`
+
+Use this to limit the maximum number of files fdir will crawl to before stopping.
+
+**Usage**
+
+```js
+const crawler = new fdir().withMaxFiles(100);
 ```
 
 ### `withFullPaths`
@@ -154,6 +164,28 @@ Use this to get paths relative to the root directory in the output.
 
 ```js
 const crawler = new fdir().withRelativePaths();
+```
+
+### `withPathSeparator`
+
+Use this to set the path separator in the output.
+
+**Usage**
+
+```js
+const crawler = new fdir().withPathSeparator("/");
+```
+
+### `withAbortSignal(AbortSignal)`
+
+Use this to pass an `AbortSignal` to the crawler.
+
+**Usage**
+
+```js
+const controller = new AbortController();
+
+const crawler = new fdir().withAbortSignal(controller.signal);
 ```
 
 ### `withErrors`
@@ -241,6 +273,37 @@ Applies a `glob` filter to all files and only adds those that satisfy it.
 const crawler = new fdir().glob("./**/*.js", "./**/*.md");
 ```
 
+### `globWithOptions(string[], Object)`
+
+The same as `glob` but allows you to pass options to the matcher.
+
+**Usage**
+
+```js
+// only get js and md files
+const crawler = new fdir().globWithOptions(["**/*.js", "**/*.md"], {
+  strictSlashes: true
+});
+```
+
+### `withGlobFunction(Function)`
+
+Uses the specified glob function to match files against the provided glob pattern.
+
+**Usage**
+
+```js
+// using picomatch or a similar library
+import picomatch from 'picomatch';
+const crawler = new fdir().withGlobFunction(picomatch);
+
+// using a custom function
+const customGlob = (patterns: string | string[]) => {
+  return (test: string): boolean => test.endsWith('.js');
+};
+const crawler = new fdir().withGlobFunction(customGlob);
+```
+
 ### `filter(Function)`
 
 Applies a filter to all directories and files and only adds those that satisfy the filter.
@@ -277,7 +340,7 @@ const crawler = new fdir().exclude((dirName, dirPath) =>
 
 ### `crawl(string)`
 
-Prepare the crawler. This should be called at then end after all the configuration has been done.
+Prepare the crawler. This should be called at the end after all the configuration has been done.
 
 **Parameters**
 
@@ -328,7 +391,7 @@ new fdir()
   .withBasePath()
   .withDirs()
   .crawl("/path/to/dir")
-  .withCallback((files) => {
+  .withCallback((err, files) => {
     // do something with files here
   });
 ```
@@ -373,14 +436,20 @@ type Options = {
   includeDirs?: boolean;
   normalizePath?: boolean;
   maxDepth?: number;
+  maxFiles?: number;
   resolvePaths?: boolean;
   suppressErrors?: boolean;
   group?: boolean;
   onlyCounts?: boolean;
-  filters?: FilterFn[];
+  filters: FilterFn[];
   resolveSymlinks?: boolean;
+  useRealPaths?: boolean;
   excludeFiles?: boolean;
+  excludeSymlinks?: boolean;
   exclude?: ExcludeFn;
   relativePaths?: boolean;
+  pathSeparator: PathSeparator;
+  signal?: AbortSignal;
+  globFunction?: Function;
 };
 ```
